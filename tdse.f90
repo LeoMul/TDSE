@@ -7,7 +7,6 @@ program main
 
     complex*16,allocatable :: psi_array(:),psi_matrix(:,:)
     real*8 :: alpha, delta_x , delta_t , x_0, x_N ,t_0, t_final ,k
-    real*8 :: pi = 3.14159265359
     real*8,allocatable :: x_array(:),V_array(:)
     integer :: j,jj,num_time_steps
 
@@ -27,7 +26,7 @@ program main
     x_array = my_arange(x_0,X_N,delta_x)
     allocate(psi_array(size(x_array)))
 
-    psi_array = gaussian(x_array,k,delta_x,0.0_dp)
+    psi_array = gaussian(x_array,k,1.0_dp,0.0_dp)
     psi_array(1) = (0.0_dp,0.0_dp)
     psi_array(size(psi_array))= (0.0_dp,0.0_dp)
     V_array = create_v_array(x_array)
