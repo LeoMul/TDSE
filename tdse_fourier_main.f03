@@ -19,7 +19,7 @@ program main
 
     allocate(psi_array(N),v_array(N),psi_matrix(num_time_steps,N))
     v_array = 0.0_dp
-    psi_array = gaussian(x_array,0.0_dp)
+    psi_array = gaussian(x_array,0.0_dp,1.0_dp,0.0_dp)
 
     psi_matrix = propagate_wave_function_fft(psi_array,v_array,delta_x,delta_t,num_time_steps)
     !print*,psi_matrix
