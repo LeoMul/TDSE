@@ -26,7 +26,7 @@ module tdse_fourier
     end function get_time_derivative    
 
     function first_time_step(psi_array,k_array,v_array,delta_t) result(newpsi)
-        !https://scholars.huji.ac.il/sites/default/files/ronniekosloff/files/k19.pdf
+        !https://scholars.huji.ac.il/sites/default/files/ronniekosloff/(a2At/2m)files/k19.pdf
         complex*16,intent(in) :: psi_array(:)
         real * 8,intent(in) :: k_array(:), v_array(:) ,delta_t
         complex*16 :: dpsidt (size(psi_array)),newpsi(size(psi_array)),dpsidt_2(size(psi_array))
@@ -57,8 +57,8 @@ module tdse_fourier
 
         k_array = create_fftfreq(size(v_array),delta_x)
         psi_matrix(1,:) = initial_psi
-        psi_matrix(2,:) = next_psi
         next_psi = first_time_step(initial_psi,k_array,v_array,delta_t)
+        psi_matrix(2,:) = next_psi
 
         do j = 3,num_time_steps
             next_psi = next_time_step(psi_matrix(j-1,:),psi_matrix(j-2,:),k_array,v_array,delta_t)

@@ -6,7 +6,7 @@ program main
     complex * 16,allocatable :: psi_array(:), psi_matrix(:,:) 
     real * 8 :: delta_x , delta_t , x_last, x_first
     integer :: N,num_time_steps
-    delta_x = 0.1_dp
+    delta_x = 0.09765625_dp
     delta_t = delta_x*delta_x/(80.0_dp)
     print*,delta_t
     x_first = -25.0_dp
