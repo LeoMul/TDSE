@@ -25,7 +25,29 @@ module FFT_MOD
         call fftw_destroy_plan(p)
 
     end function
-    
+
+    function fft_2d(in) result(out)
+        complex(c_double_complex),intent(inout) :: in(:,:)
+        complex(c_double_complex) :: out(size(in,1),size(in,2))
+        type(C_PTR) :: p
+        p = fftw_plan_dft_2d(size(in,2),size(in,1), in, out, FFTW_FORWARD, FFTW_ESTIMATE);
+        call fftw_execute_dft(p, in, out)
+        call fftw_destroy_plan(p)
+
+
+    end function
+!
+    function ifft_2d(in) result(out)
+        complex(c_double_complex),intent(inout) :: in(:,:)
+        complex(c_double_complex) :: out(size(in,1),size(in,2))
+        type(C_PTR) :: p
+        p = fftw_plan_dft_2d(size(in,2),size(in,1), in, out, FFTW_BACKWARD, FFTW_ESTIMATE);
+        call fftw_execute_dft(p, in, out)
+        call fftw_destroy_plan(p)
+        out = out / size(out)
+
+    end function
+
     function create_fftfreq(n,d) result (fftfreq)
         !makes the correct k's (needs multiplied by 2pi) and scales by length.
 

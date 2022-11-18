@@ -9,7 +9,7 @@ plt.rcParams['text.usetex'] = True
 x_array = data[0,:]
 size = data.shape
 
-time = range(1,size[0]-1,1)
+time = range(1,size[0]-1,10)
 
 square = [0.0,0.9]
 square_base_1 = [10.0,10.0]
@@ -25,7 +25,7 @@ def create_frame(time_index):
     plt.plot(x_array,im_part[time_index,:],label = "Im $\psi$")
     plt.title(str(time_index))
     plt.ylim([-1,1])
-    plt.xlim([-5,30])
+    plt.xlim([-30,30])
 
     #v = 0.5*x*x
     #plt.plot(x,v,'k',label = "Harmonic Potential")

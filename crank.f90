@@ -11,11 +11,11 @@ program main
     real* 8 :: delta_t,delta_x ,alpha,x_0,x_N
     real* 8, parameter:: pi = 3.14159265359
     real* 8 :: strength, length, start, wavevector
-    delta_t = 0.005_dp   
-    x_0 = -15.0_dp  
-    x_N = 15.0_dp 
-    num_time_steps = 3000
-    delta_x  = 0.1_dp
+    delta_t = 0.01_dp   
+    x_0 = -50.0_dp  
+    x_N = 40.0_dp 
+    num_time_steps = 1000
+    delta_x  = 0.05_dp
 
     alpha = 0.5_dp*delta_t/(delta_x*delta_x)
     every = 2
@@ -25,11 +25,11 @@ program main
 
     identity = create_indentity_matrix(n-2) 
 
-    start = 10.0_dp
-    length = 5.0_dp 
-    strength = 1.0_dp
+    start = 5.0_dp
+    length = 2.0_dp 
+    strength = 1000.0_dp
 
-    v_array = 0.5_dp * x_array * x_array
+    v_array = create_square_barrier(x_array,start,length,strength)
     m_matrix = create_m_matrix(v_array(2:n-1),COMPLEX(alpha,0.0_dp),COMPLEX(delta_t,0.0_dp))
 
     wavevector = 1.0_dp
