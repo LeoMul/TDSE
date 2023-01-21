@@ -89,6 +89,37 @@ module tdse_fourier
 
     end function propagate_wave_function_fft
     
+    function propagate_wave_function_fft_split_operator(initial_psi,v_array,delta_x,delta_t,num_time_steps,every) result (psi_matrix)
+
+        complex*16,intent(in) :: initial_psi(:)
+        integer ,intent(in) :: every
+        real * 8,intent(in) :: delta_x, v_array(:) ,delta_t
+        real * 8 :: k_array(size(v_array))
+        integer :: num_time_steps , j
+        complex*16 :: psi_matrix(num_time_steps/every,size(v_array))
+        complex * 16::psi(size(initial_psi)),exptarray(size(v_array)),expv_array(size(v_array))
+
+        k_array = 6.28318530718_dp*create_fftfreq(size(v_array),delta_x)
+        psi_matrix(1,:) = initial_psi
+        exptarray = exp(complex(0.0_dp,-0.5_dp*delta_t)*k_array*k_array)
+        expv_array= exp(complex(0.0_dp,-0.5_dp*delta_t)*v_array)
+        psi = initial_psi
+        do j = 2,num_time_steps
+            psi = expv_array*psi
+            psi = fft(psi)
+            psi = exptarray * psi 
+            psi = expv_array * ifft(psi)
+            if ((modulo(j,every) == 0) .or. (every == 1)) then
+                print*,j
+ 
+                psi_matrix(j/every,:) = psi
+            end if 
+        end do 
+
+    end function propagate_wave_function_fft_split_operator
+
+
+
     subroutine write_out_data(psi_matrix,x_array,every,delta_t,num_time_steps)
         complex*16,intent(in) :: psi_matrix(:,:) 
         real * 8, intent(in) :: x_array(:) ,delta_t

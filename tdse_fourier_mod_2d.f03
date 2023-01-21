@@ -94,6 +94,36 @@ module tdse_fourier_2d
         end do
     end function 
 
+    function propagate_wave_function_fft_2d_split_operator(initial_psi,v_array,k_matrix,delta_t,num_time_steps,every) result (psi_3index)
+
+        complex*16,intent(in) :: initial_psi(:,:)
+        integer ,intent(in) :: every
+        real * 8,intent(in) :: v_array(:,:) ,delta_t,k_matrix(:,:)
+        integer :: num_time_steps , j
+        complex * 16::psi(size(initial_psi,1),size(initial_psi,2)),exptarray(size(v_array,1),size(v_array,2)),expv_array(size(v_array,1),size(v_array,2))
+        complex * 16 :: psi_3index(num_time_steps/every+1,size(initial_psi,1),size(initial_psi,2))
+
+        psi_3index(1,:,:) = initial_psi
+
+        exptarray = exp(complex(0.0_dp,-0.5_dp*delta_t)*k_matrix*k_matrix)
+        expv_array= exp(complex(0.0_dp,-0.5_dp*delta_t)*v_array)
+        psi = initial_psi
+
+        do j = 2,num_time_steps
+            psi = expv_array*psi
+            psi = fft_2d(psi)
+            psi = exptarray * psi 
+            psi = expv_array * ifft_2d(psi)
+            if ((modulo(j,every) == 0) .or. (every == 1)) then
+                print*,j
+ 
+                psi_3index(j/every+1,:,:) = psi
+            end if 
+        end do 
+
+    end function propagate_wave_function_fft_2d_split_operator
+
+
     function create_circular_barrier_potential(x_array,y_array,strength,x_pos,y_pos,radius) result(v_array)
         real * 8,intent(in) :: x_array(:),y_array(:)
         real * 8,intent(in) :: strength, x_pos, y_pos, radius
@@ -112,6 +142,33 @@ module tdse_fourier_2d
             end do 
         end do
     end function 
+
+    function create_gaussian_crystal_potential(x_array,y_array,xthresh,ystart,spacing,strength,width) result (v_array)
+        real * 8,intent(in) :: x_array(:),y_array(:)
+        real * 8,intent(in) :: strength, xthresh,spacing,ystart,width
+        real *8 :: v_array(size(x_array),size(y_array)),currentx,currenty
+        integer :: i,j,Nx,Ny
+
+        v_array = 0.0_dp
+
+        Ny = NINT((y_array(size(y_array)) - y_array(1)) /spacing )
+        Nx = NINT((x_array(size(x_array)) - xthresh) /spacing ) - 1
+
+        print*,"Requested" ,Nx,Ny,"gaussians"
+
+        currentx = xthresh + spacing
+
+        do i = 1,Nx
+            currenty = ystart
+            do j = 1,Ny 
+                v_array = v_array + strength*gaussian_2d_potential(x_array,y_array,width,currentx,currenty)
+                currenty = currenty + spacing
+            end do 
+            currentx = currentx + spacing
+        end do 
+
+    end function
+
 
     subroutine write_out_dim2array(psi_matrix,x_array,y_array,name)
         complex*16,intent(in) :: psi_matrix(:,:) 
@@ -169,7 +226,7 @@ module tdse_fourier_2d
         allocate(temp_info_array(max_ind))
         shape_array = shape(psi_matrix)
         print*,"shape array",shape_array
-        open (1, file = "fourierdata_2d_gif_abs.dat")
+        open (1, file = "fourierdata_2d_gif_abs_test.dat")
         temp_info_array = 0.0_dp 
 
         temp_info_array(1) = REAL(size(x_array))
@@ -236,6 +293,20 @@ module tdse_fourier_2d
 
     end function 
 
+    function gaussian_2d_potential(x_array,y_array,width,centerx,centery) result(gaussian_2d_array)
+        real * 8 , intent(in) :: x_array(:),y_array(:),width,centerx,centery
+        real * 8 :: gaussian_2d_array(size(x_array),size(y_array))
+        integer :: i,j 
+
+        do i = 1,size(x_array)
+            do j = 1,size(y_array)
+                !fortran is column majored remember
+                gaussian_2d_array(i,j) = EXP(-((x_array(i)-centerx)**2 + (y_array(j)-centery)**2)/width)
+            end do 
+        end do
+
+
+    end function 
 
 
 end module tdse_fourier_2d
