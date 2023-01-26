@@ -110,7 +110,7 @@ module tdse_fourier
             psi = exptarray * psi 
             psi = expv_array * ifft(psi)
             if ((modulo(j,every) == 0) .or. (every == 1)) then
-                print*,j
+                !print*,j
  
                 psi_matrix(j/every,:) = psi
             end if 
@@ -168,7 +168,7 @@ module tdse_fourier
         integer,intent(in) :: every
         integer :: j,jj ,shape_array(2),num_time_steps
         CHARACTER(LEN=20) :: FMT = "(F20.12)"
-        open (1, file = "fourierdatagif_real_barrier.dat")
+        open (1, file = "fourierdatagif_real_barrier_test.dat")
         write(1,fmt="(1x,a)",advance = "no") "#delta_t:"
 
         write(1,FMT,advance = "no") delta_t
@@ -192,7 +192,7 @@ module tdse_fourier
          end if
         end do
 
-        open (1, file = "fourierdatagif_imag_barrier.dat")
+        open (1, file = "fourierdatagif_imag_barrier_test.dat")
         write(1,fmt="(1x,a)",advance = "no") "#delta_t:"
 
         write(1,FMT,advance = "no") delta_t
@@ -214,7 +214,7 @@ module tdse_fourier
          end if
         end do
 
-        open (1, file = "fourierdatagif_abs_barrier.dat")
+        open (1, file = "fourierdatagif_abs_barrier_test.dat")
         write(1,fmt="(1x,a)",advance = "no") "#delta_t:"
 
         write(1,FMT,advance = "no") delta_t

@@ -8,6 +8,7 @@ from matplotlib.pyplot import figure
 plt.rcParams['text.usetex'] = True
 plt.rcParams.update({'font.size': 32})
 
+
 def read_in_2d_schrodinger_data(path):
 
     misc_data = np.loadtxt(path,max_rows=3)
@@ -40,7 +41,7 @@ def create_heatmap_frame(x_array,y_array,matrix,index,delta_t,every):
     #print(matrix)
 
     x, y = np.meshgrid(x_array, y_array)
-    c = ax.pcolormesh(x, y, matrix, cmap=cm.coolwarm,vmin= 0.0,vmax = 1.0)
+    c = ax.pcolormesh(x, y, matrix+0.2*potential, cmap=cm.coolwarm,vmin= 0.0,vmax = 1.0)
     fig.colorbar(c, ax=ax)
 
     fig.set_size_inches(16,12 )
@@ -48,10 +49,10 @@ def create_heatmap_frame(x_array,y_array,matrix,index,delta_t,every):
     plt.xlabel("$x$")
     plt.ylabel("$y$")
     stepsize = 5.0
-    ticks_array = np.arange(-10.0, 10.0+stepsize, stepsize)
-    ax.xaxis.set_ticks(ticks_array)
-    ax.yaxis.set_ticks(ticks_array)
-    plt.xlim([-10,10])
+    #ticks_array = np.arange(-x[], 10.0+stepsize, stepsize)
+    #ax.xaxis.set_ticks(ticks_array)
+    #ax.yaxis.set_ticks(ticks_array)
+    #plt.xlim([-10,10])
     c.set_label("|psi|")
     plt.title(str(time))
     plt.savefig(f'./img/img_{index}.png', 
@@ -60,10 +61,13 @@ def create_heatmap_frame(x_array,y_array,matrix,index,delta_t,every):
                )
     plt.close()
 
-raw_data = "fourierdata_2d_gif_abs_test.dat"
+potential = np.loadtxt("potential_gaussian_sea_strength10.000spacing2.000width0.250.dat")
+
+raw_data = "abswavefunction_momentum10.000packetwidth2.000gaussian_sea_strength10.000spacing2.000width0.250.dat"
+
 x_array,y_array,every,delta_t,matrices,time_steps = read_in_2d_schrodinger_data(raw_data)
 
-time = range(0,time_steps,1)
+time = range(0,int(time_steps/2),1)
 for t in time:
     print(t)
     create_heatmap_frame(x_array,y_array,matrices[t,:,:],t,delta_t,every)
@@ -74,7 +78,7 @@ for t in time:
     frames.append(image)
 
 
-imageio.mimsave('./2d_test.gif', # output gif
+imageio.mimsave('./2d_test_pit.gif', # output gif
                 frames,          # array of input frames
                 fps = 10,loop = 0)         # optional: frames per second
 

@@ -102,20 +102,33 @@ module tdse_fourier_2d
         integer :: num_time_steps , j
         complex * 16::psi(size(initial_psi,1),size(initial_psi,2)),exptarray(size(v_array,1),size(v_array,2)),expv_array(size(v_array,1),size(v_array,2))
         complex * 16 :: psi_3index(num_time_steps/every+1,size(initial_psi,1),size(initial_psi,2))
+        real * 8 :: t1,t2
+        integer :: tenpercentofsteps, time_index
 
         psi_3index(1,:,:) = initial_psi
 
         exptarray = exp(complex(0.0_dp,-0.5_dp*delta_t)*k_matrix*k_matrix)
         expv_array= exp(complex(0.0_dp,-0.5_dp*delta_t)*v_array)
         psi = initial_psi
-
+        tenpercentofsteps = num_time_steps/10
+        !print*,"ten" ,tenpercentofsteps
+        time_index = 1
+        call cpu_time(t1)
         do j = 2,num_time_steps
             psi = expv_array*psi
             psi = fft_2d(psi)
             psi = exptarray * psi 
             psi = expv_array * ifft_2d(psi)
+
+            if (j .eq. time_index*tenpercentofsteps) then 
+                call cpu_time(t2)
+                print*, time_index*10,"percent complete in ", t2-t1 ,"cpu time"
+                time_index = time_index + 1
+                t1 = t2
+            end if 
+
             if ((modulo(j,every) == 0) .or. (every == 1)) then
-                print*,j
+                !print*,j
  
                 psi_3index(j/every+1,:,:) = psi
             end if 
@@ -143,20 +156,21 @@ module tdse_fourier_2d
         end do
     end function 
 
-    function create_gaussian_crystal_potential(x_array,y_array,xthresh,ystart,spacing,strength,width) result (v_array)
+    function create_gaussian_crystal_potential(x_array,y_array,xthresh,spacing,strength,width) result (v_array)
         real * 8,intent(in) :: x_array(:),y_array(:)
-        real * 8,intent(in) :: strength, xthresh,spacing,ystart,width
-        real *8 :: v_array(size(x_array),size(y_array)),currentx,currenty
+        real * 8,intent(in) :: strength, xthresh,spacing,width
+        real *8 :: v_array(size(x_array),size(y_array)),currentx,currenty,ystart
         integer :: i,j,Nx,Ny
 
         v_array = 0.0_dp
 
-        Ny = NINT((y_array(size(y_array)) - y_array(1)) /spacing )
-        Nx = NINT((x_array(size(x_array)) - xthresh) /spacing ) - 1
+        Ny = NINT((y_array(size(y_array)) - y_array(1)) /spacing ) + 1 
+        Nx = NINT((x_array(size(x_array)) - xthresh) /spacing ) + 1
 
         print*,"Requested" ,Nx,Ny,"gaussians"
+        ystart = y_array(1)
 
-        currentx = xthresh + spacing
+        currentx = xthresh 
 
         do i = 1,Nx
             currenty = ystart
@@ -209,6 +223,62 @@ module tdse_fourier_2d
 
 
 
+    end subroutine
+
+    subroutine write_out_potential(potential,strength,spacing,width)
+        real * 8,intent(in):: potential(:,:) , strength, spacing,width
+        character(len = 500) ::  name  
+        character(len = 504) :: name2
+        CHARACTER(LEN=20) :: FMT = "(F20.12)"
+
+        integer :: i,j ,nx,ny
+        write(name,'(a31,F20.3,a7,F20.3,a5,F20.3)')  "potential_gaussian_sea_strength" , strength,"spacing", spacing ,"width",width
+
+        !print*,name
+        call StripSpaces(name)
+
+        !PRINT*,name
+        name2 = name // ".dat"
+        call StripSpaces(name2)
+        print*,"writing potential to ",name2
+        !print*,name2
+        open (1, file = name2)
+
+        nx = size(potential,1)
+        ny = size(potential,2)
+
+        do j = 1,ny
+            do i = 1,nx
+                write(1,FMT,advance = "no") potential(i,j)
+            end do 
+            write(1,*) " "
+
+        end do 
+
+    end subroutine
+
+    subroutine StripSpaces(string)
+        !https://stackoverflow.com/questions/27179549/removing-whitespace-in-string
+        character(len=*) :: string
+        integer :: stringLen 
+        integer :: last, actual
+    
+        stringLen = len (string)
+        last = 1
+        actual = 1
+    
+        do while (actual < stringLen)
+            if (string(last:last) == ' ') then
+                actual = actual + 1
+                string(last:last) = string(actual:actual)
+                string(actual:actual) = ' '
+            else
+                last = last + 1
+                if (actual < last) &
+                    actual = last
+            endif
+        end do
+    
     end subroutine
 
     subroutine write_out_3index_for_gif(psi_matrix,x_array,y_array,every,delta_t)
@@ -277,6 +347,84 @@ module tdse_fourier_2d
 
 
     end subroutine
+
+    subroutine write_out_3index_for_gif_gaussian(psi_matrix,x_array,y_array,every,delta_t,width,strength,spacing,packetwidth,packetwavenumber)
+        complex * 16,intent(in) :: psi_matrix(:,:,:)
+        real * 8 ,intent(in) :: x_array(:),y_array(:) , delta_t ,width,strength,spacing,packetwidth,packetwavenumber
+        integer, intent(in):: every 
+        complex * 16 :: current_psi(size(psi_matrix,2),size(psi_matrix,3))
+        integer :: time_index , x_index , y_index ,shape_array(3)
+        CHARACTER(LEN=20) :: FMT = "(F20.12)"
+
+        CHARACTER(LEN = 500) :: filename_1
+        CHARACTER(LEN = 504) :: filename_2
+        
+        real * 8,allocatable :: temp_info_array(:)  
+        integer ::max_ind
+
+        write(filename_1,'(a24,F20.3,a11,F20.3,a21,F20.3,a7,F20.3,a5,F20.3)')  "abswavefunction_momentum",packetwavenumber,"packetwidth",packetwidth,"gaussian_sea_strength" , strength,"spacing", spacing ,"width",width        
+        call StripSpaces(filename_1)
+        filename_2 = filename_1 // ".dat"
+        call StripSpaces(filename_2)
+
+        print*,"writing out to ", filename_2
+
+        max_ind = MAX(size(x_array),size(y_array))
+        allocate(temp_info_array(max_ind))
+        shape_array = shape(psi_matrix)
+        print*,"shape array",shape_array
+        open (1, file = filename_2)
+        temp_info_array = 0.0_dp 
+
+        temp_info_array(1) = REAL(size(x_array))
+        temp_info_array(2) = REAL(size(y_array))
+        temp_info_array(3) = REAL(every)
+        temp_info_array(4) = delta_t
+        temp_info_array(5) = shape_array(1)
+        write (1,*) "# SIZE OF X        SIZE OF Y         EVERY               DELTA_T           NUM TIMESTEPS"
+        do x_index = 1,max_ind
+            write(1,FMT,advance = "no") temp_info_array(x_index)
+        end do 
+        write(1,*) " "
+        write(1,*) "#x_array"
+
+        do x_index = 1,max_ind
+            if (x_index > size(x_array)) then 
+                write(1,FMT,advance = "no") 0.0_dp
+            else 
+                write(1,FMT,advance = "no") x_array(x_index)
+            end if
+        end do 
+        write(1,*) " "
+
+        write(1,*) "#y_array"
+        do y_index = 1,max_ind
+            if (y_index > size(y_array)) then 
+                write(1,FMT,advance = "no") 0.0_dp
+            else 
+                write(1,FMT,advance = "no") y_array(y_index)
+            end if 
+        end do 
+        write(1,*) " "
+
+        write(1,*) "####"
+        do time_index = 1,shape_array(1)
+            current_psi = psi_matrix(time_index,:,:)
+            !print*,current_psi
+            !print*,"###"
+            do y_index = 1,size(y_array)
+                do x_index = 1,size(x_array)
+                    write(1,FMT,advance = "no") abs(current_psi(x_index,y_index))
+                end do 
+                write(1,*) " "
+                
+            end do 
+            write(1,*) "#######################"
+        end do 
+
+
+    end subroutine
+
 
     function gaussian_2d(x_array,y_array,width,wavenumber) result(gaussian_2d_array)
         real * 8 , intent(in) :: x_array(:),y_array(:),width,wavenumber
