@@ -3,7 +3,7 @@ program main
     use tdse_fourier
     use tdse
     implicit none
-    integer,parameter :: Nx = 2048, Ny = 1024
+    integer,parameter :: Nx = 512, Ny = 512
     real * 8 :: x_array_temp(Nx),y_array_temp(Ny), k_x(Nx),k_y(Ny)
     real * 8 :: delta_x, delta_y,first_x,final_x ,delta_t,first_y,final_y,wavenumber
 
@@ -13,10 +13,10 @@ program main
     real * 8,allocatable :: k_matrix(:,:),v_array(:,:)
     integer :: num_time_steps ,every 
 
-    first_x = -10.0_dp 
-    final_x = 40.0_dp 
-    first_y = -5.0_dp
-    final_y = 5.0_dp
+    first_x = -15.0_dp 
+    final_x = 20.0_dp 
+    first_y = -2.5_dp
+    final_y = 2.5_dp
 
     x_array_temp = my_linspace(first_x,final_x,Nx)
     y_array_temp = my_linspace(first_y,final_y,Ny) 
@@ -26,7 +26,7 @@ program main
 
     delta_t = (delta_x**2 + delta_y**2)/400.0_dp
 
-    num_time_steps = 20000
+    num_time_steps = 10000
     every = 400
 
     print*,"delta x ",delta_x
@@ -44,8 +44,8 @@ program main
     k_matrix = create_k_matrix(k_x,k_y)
     v_array = 0.0_dp
 
-    spacing = 2.0_dp 
-    strength = 10.0_dp
+    spacing = 2.5_dp 
+    strength = 100.0_dp
     width = 0.25_dp
     xthresh = 1.0_dp
 
